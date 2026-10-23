@@ -1,0 +1,19 @@
+{
+    "schema": 1,
+    "key": "qr-code",
+    "name": "QR Code",
+    "version": "1.0.0",
+    "description": "Generate and download SVG QR codes using a module-private Composer dependency.",
+    "provider": "Modules\\QrCode\\QrCodeServiceProvider",
+    "autoload": {
+        "psr-4": {
+            "Modules\\QrCode\\": "src/"
+        }
+    },
+    "composer": {
+        "require": {
+            "php": "^8.5",
+            "laravel/framework": "^13.0"
+        }
+    }
+}
