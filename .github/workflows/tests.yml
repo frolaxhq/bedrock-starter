@@ -1,0 +1,65 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: PHP 8.5 tests and formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout starter
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Bedrock has no published release yet. Keep the development dependency
+      # local to CI so new starter applications still use Packagist.
+      - name: Checkout Bedrock
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: frolaxhq/bedrock
+          ref: main
+          path: .bedrock
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2.40.0
+        with:
+          php-version: '8.5'
+          extensions: dom, curl, libxml, mbstring, zip, fileinfo, sqlite, pdo_sqlite, bcmath, intl, xmlwriter
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate Composer metadata
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: |
+          composer config repositories.bedrock '{"type":"path","url":".bedrock","options":{"symlink":false,"versions":{"frolaxhq/bedrock":"1.0.0"}}}'
+          composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+          touch database/database.sqlite
+          php artisan migrate --force --no-interaction
+
+      - name: Install isolated module build tools
+        run: composer install --working-dir=vendor/frolaxhq/bedrock/resources/module-tools --no-dev --no-scripts --no-plugins --prefer-dist --no-interaction --no-progress
+
+      - name: Check formatting
+        run: vendor/bin/pint --test
+
+      - name: Run tests
+        run: composer test
