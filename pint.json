@@ -1,7 +1,6 @@
 {
     "preset": "laravel",
     "exclude": [
-        ".bedrock",
         "modules/qr-code/dist"
     ]
 }
